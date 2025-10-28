@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const SELF_URL = 'https://tygogamblesdata/leaderboard/top14';
+const SELF_URL = 'https://tygo-gambles-data.vercel.app/';
 
 const CSGOWIN_API_KEY = '14b2024c50';
 const CSGOWIN_BASE_URL = 'https://api.csgowin.com';
@@ -12,7 +12,8 @@ const CSGOWIN_AFFILIATE_ENDPOINT = '/api/affiliate/external';
 
 const RAINBET_API_KEY = 'kPPMY5InLDETccv0EJAbgDtZazfPuWHy';
 
-let rainbetCachedData = [];
+let rainbetCurrentCache = [];
+let rainbetPreviousCache = [];
 
 // ==========================
 // CORS middleware
@@ -119,7 +120,6 @@ function formatCSGOWinOutput(data) {
 function monthRangeUTC(year, month0) {
   const start = new Date(Date.UTC(year, month0, 1));
   const end = new Date(Date.UTC(year, month0 + 1, 0));
-  // Format for Rainbet API (YYYY-MM-DD)
   return {
     startStr: start.toISOString().slice(0, 10),
     endStr: end.toISOString().slice(0, 10),
@@ -131,7 +131,6 @@ function getRainbetApiUrlForMonth(year, month0) {
   return `https://services.rainbet.com/v1/external/affiliates?start_at=${startStr}&end_at=${endStr}&key=${RAINBET_API_KEY}`;
 }
 
-// Mask Rainbet username
 function maskRainbetUsername(username) {
   if (!username) return '';
   if (username.length <= 4) return username;
@@ -165,9 +164,16 @@ async function fetchAndProcessRainbet(url) {
 async function fetchAndCacheRainbetData() {
   try {
     const now = new Date();
-    const url = getRainbetApiUrlForMonth(now.getUTCFullYear(), now.getUTCMonth());
-    rainbetCachedData = await fetchAndProcessRainbet(url);
-    console.log(`[✅] Rainbet leaderboard updated (${rainbetCachedData.length} entries)`);
+
+    // Cache current month rainbet data
+    rainbetCurrentCache = await fetchAndProcessRainbet(getRainbetApiUrlForMonth(now.getUTCFullYear(), now.getUTCMonth()));
+
+    // Cache previous month rainbet data
+    const prevYear = now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear();
+    const prevMonth0 = (now.getUTCMonth() + 11) % 12;
+    rainbetPreviousCache = await fetchAndProcessRainbet(getRainbetApiUrlForMonth(prevYear, prevMonth0));
+
+    console.log(`[✅] Rainbet data cached - current(${rainbetCurrentCache.length}), previous(${rainbetPreviousCache.length})`);
   } catch (err) {
     console.error('[❌] Failed to fetch Rainbet leaderboard:', err.message);
   }
@@ -194,23 +200,12 @@ app.get('/leaderboard/csgowin/previous', async (req, res) => {
 
 // Rainbet current month cached leaderboard
 app.get('/leaderboard/rainbet/current', (req, res) => {
-  res.json(rainbetCachedData);
+  res.json(rainbetCurrentCache);
 });
 
-// Rainbet previous month on demand, not cached (due to latencies, you can cache similarly if needed)
-app.get('/leaderboard/rainbet/previous', async (req, res) => {
-  try {
-    const now = new Date();
-    const prevYear = now.getUTCMonth() === 0 ? now.getUTCFullYear() - 1 : now.getUTCFullYear();
-    const prevMonth0 = (now.getUTCMonth() + 11) % 12; // wrap Jan->Dec
-
-    const url = getRainbetApiUrlForMonth(prevYear, prevMonth0);
-    const data = await fetchAndProcessRainbet(url);
-    res.json(data);
-  } catch (err) {
-    console.error('[❌] Failed to fetch Rainbet previous leaderboard:', err.message);
-    res.status(500).json({ error: 'Failed to fetch Rainbet previous leaderboard data.' });
-  }
+// Rainbet previous month cached leaderboard
+app.get('/leaderboard/rainbet/previous', (req, res) => {
+  res.json(rainbetPreviousCache);
 });
 
 // Custom CSGOWin leaderboard endpoint with query params (optional)
