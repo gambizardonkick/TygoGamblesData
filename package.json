@@ -1,0 +1,17 @@
+{
+  "name": "leaderboard-server",
+  "version": "1.0.0",
+  "description": "Express server for CSGOWin and Rainbet leaderboards with dynamic monthly periods",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Your Name",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.4.0",
+    "express": "^5.1.0",
+    "node-fetch": "^3.3.1"
+  }
+}
