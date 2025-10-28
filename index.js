@@ -10,7 +10,7 @@ const CSGOWIN_API_KEY = '14b2024c50';
 const CSGOWIN_BASE_URL = 'https://api.csgowin.com';
 const CSGOWIN_AFFILIATE_ENDPOINT = '/api/affiliate/external';
 
-const RAINBET_API_KEY = 'kPPMY5InLDETccv0EJAbgDtZazfPuWHy';
+const RAINBET_API_KEY = 'C9Kit6DoHvTYCWp9LiNUFjmjomaGHaoG';
 
 let rainbetCurrentCache = [];
 let rainbetPreviousCache = [];
