@@ -148,7 +148,6 @@ async function fetchAndProcessRainbet(url) {
 
   const top10 = sorted.slice(0, 10);
 
-
   return top10.map((entry) => {
     const w = Math.max(0, Math.round(parseFloat(entry.wagered_amount || 0)));
     return {
