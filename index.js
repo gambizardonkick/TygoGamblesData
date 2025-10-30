@@ -26,21 +26,29 @@ app.use((req, res, next) => {
 
 // ==========================
 // Helper to dynamically get current and previous month ranges (UTC)
-function getMonthlyPeriods() {
+function getWeeklyPeriods() {
+  const startDate = new Date(Date.UTC(2025, 0, 11)); // Fixed start date 2025-01-11 UTC
   const now = new Date();
 
-  const currentStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0));
-  const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0));
-  const currentEnd = new Date(nextMonth.getTime() - 1);
+  const weekMs = 7 * 24 * 60 * 60 * 1000; // milliseconds in a week
+  const nowUTC = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  const startUTC = startDate.getTime();
 
-  const previousStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1, 0, 0, 0));
-  const previousEnd = new Date(currentStart.getTime() - 1);
+  let weeksPassed = Math.floor((nowUTC - startUTC) / weekMs);
+  if (weeksPassed < 0) weeksPassed = 0; // if current date is before start date
+
+  const currentWeekStart = new Date(startUTC + weeksPassed * weekMs);
+  const currentWeekEnd = new Date(currentWeekStart.getTime() + weekMs - 1);
+
+  const previousWeekStart = new Date(currentWeekStart.getTime() - weekMs);
+  const previousWeekEnd = new Date(currentWeekStart.getTime() - 1);
 
   return {
-    current: { from: currentStart, to: currentEnd },
-    previous: { from: previousStart, to: previousEnd }
+    current: { from: currentWeekStart, to: currentWeekEnd },
+    previous: { from: previousWeekStart, to: previousWeekEnd }
   };
 }
+
 
 // ==========================
 // CSGOWin API: Fetching leaderboard with retry and error handling
@@ -181,21 +189,20 @@ async function fetchAndCacheRainbetData() {
 // ==========================
 // Express routes
 
-// CSGOWin current month
 app.get('/leaderboard/csgowin/current', async (req, res) => {
-  const periods = getMonthlyPeriods();
+  const periods = getWeeklyPeriods();
   const data = await fetchCSGOWinLeaderboard(periods.current.from.getTime(), periods.current.to.getTime());
-  if (data === null) return res.status(500).json({ error: 'Failed to fetch CSGOWin current month data' });
+  if (data === null) return res.status(500).json({ error: 'Failed to fetch CSGOWin current week data' });
   res.json(formatCSGOWinOutput(data));
 });
 
-// CSGOWin previous month
 app.get('/leaderboard/csgowin/previous', async (req, res) => {
-  const periods = getMonthlyPeriods();
+  const periods = getWeeklyPeriods();
   const data = await fetchCSGOWinLeaderboard(periods.previous.from.getTime(), periods.previous.to.getTime());
-  if (data === null) return res.status(500).json({ error: 'Failed to fetch CSGOWin previous month data' });
+  if (data === null) return res.status(500).json({ error: 'Failed to fetch CSGOWin previous week data' });
   res.json(formatCSGOWinOutput(data));
 });
+
 
 // Rainbet current month cached leaderboard
 app.get('/leaderboard/rainbet/current', (req, res) => {
