@@ -136,11 +136,6 @@ function getRainbetApiUrlForMonth(year, month0) {
   return `https://services.rainbet.com/v1/external/affiliates?start_at=${startStr}&end_at=${endStr}&key=${RAINBET_API_KEY}`;
 }
 
-function maskRainbetUsername(username) {
-  if (!username) return '';
-  if (username.length <= 4) return username;
-  return username.slice(0, 2) + '***' + username.slice(-2);
-}
 
 async function fetchAndProcessRainbet(url) {
   const response = await fetch(url);
