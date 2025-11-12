@@ -108,11 +108,6 @@ async function fetchCSGOWinLeaderboard(fromTimestamp, toTimestamp, options = {})
   return null;
 }
 
-function maskUsername(username) {
-  if (!username) return 'Unknown';
-  if (username.length <= 4) return username;
-  return username.slice(0, 2) + '***' + username.slice(-2);
-}
 
 
 function formatCSGOWinOutput(data) {
