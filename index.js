@@ -1,9 +1,12 @@
 import express from 'express';
 import axios from 'axios';
 import { parse } from 'csv-parse/sync';
+import cors from 'cors';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(cors());
 
 async function fetchGoogleSheets(spreadsheetId, gid) {
   try {
